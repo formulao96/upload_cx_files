@@ -1,10 +1,10 @@
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.layers import Input, Dense, Concatenate
 from keras.layers import Convolution1D
 from keras.layers import GlobalMaxPooling1D
 from keras.layers import Embedding
 from keras.layers import AlphaDropout
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 
 
 class CharCNNKim(object):
@@ -18,7 +18,8 @@ class CharCNNKim(object):
     def __init__(self, input_size, alphabet_size, embedding_size,
                  conv_layers, fully_connected_layers,
                  num_of_classes, dropout_p,
-                 optimizer='adam', loss='categorical_crossentropy'):
+                 optimizer='adam', loss='categorical_crossentropy',
+                 verbose=2, stop_patience=0):
         """
         Initialization for the Character Level CNN model.
 
@@ -41,7 +42,7 @@ class CharCNNKim(object):
         self.num_of_classes = num_of_classes
         self.dropout_p = dropout_p
         self.optimizer = optimizer
-        self.loss = loss
+        self.loss = loss      
         self._build_model()  # builds self.model variable
 
     def _build_model(self):
@@ -80,7 +81,8 @@ class CharCNNKim(object):
 
     def train(self, training_inputs, training_labels,
               validation_inputs, validation_labels,
-              epochs, batch_size, checkpoint_every=10):
+              epochs, batch_size, checkpoint_every=10,
+              verbose=2, stop_patience=0):
         """
         Training function
 
@@ -97,20 +99,27 @@ class CharCNNKim(object):
 
         """
         # Create callbacks
-        #tensorboard = TensorBoard(log_dir='./logs', histogram_freq=checkpoint_every, batch_size=batch_size,
-        #                          write_graph=False, write_grads=True, write_images=False,
-        #                          embeddings_freq=checkpoint_every,
-        #                          embeddings_layer_names=None)
-        tensorboard = TensorBoard(log_dir='/dbfs/FileStore/cxanalytics/upload_cx_files-master/', histogram_freq=0,write_graph=True, write_images=False)
+        callbacks = [EarlyStopping(monitor='val_loss', patience=stop_patience),
+                     ModelCheckpoint(filepath='/dbfs/FileStore/cxanalytics/upload_cx_files-master/best_model.h5', monitor='val_loss', save_best_only=True),
+                     TensorBoard(log_dir='/dbfs/FileStore/cxanalytics/upload_cx_files-master/logs', histogram_freq=0, write_graph=True, write_images=False)]
+        
         # Start training
         print("Training CharCNNKim model: ")
         self.model.fit(training_inputs, training_labels,
                        validation_data=(validation_inputs, validation_labels),
                        epochs=epochs,
                        batch_size=batch_size,
-                       verbose=1,
-                       callbacks=[tensorboard])
+                       verbose=verbose,
+                       callbacks=callbacks)
 
+    def load_model(self, model_path):
+        """
+        Load a fitted model from a path
+        """
+
+        self.model = load_model(model_path)
+
+        
     def test(self, testing_inputs, testing_labels, batch_size):
         """
         Testing function
