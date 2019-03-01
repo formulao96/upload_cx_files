@@ -101,7 +101,7 @@ class CharCNNKim(object):
         #                          write_graph=False, write_grads=True, write_images=False,
         #                          embeddings_freq=checkpoint_every,
         #                          embeddings_layer_names=None)
-        tensorboard = TensorBoard(log_dir='./logs', histogram_freq=0,write_graph=True, write_images=False)
+        tensorboard = TensorBoard(log_dir='/dbfs/FileStore/cxanalytics/upload_cx_files-master/', histogram_freq=0,write_graph=True, write_images=False)
         # Start training
         print("Training CharCNNKim model: ")
         self.model.fit(training_inputs, training_labels,
